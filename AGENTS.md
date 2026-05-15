@@ -12,9 +12,23 @@ bluebuild generate recipes/recipe.yml    # Generate Containerfile for inspection
 
 Build requires Docker v23+, Podman v4+, or Buildah v1.29+.
 
+## Justfile Commands
+
+```bash
+just validate               # Validate recipe syntax
+just generate               # Generate Containerfile for inspection
+just generate-iso           # Build + installer ISO from recipe
+just generate-iso-image     # Installer ISO from pushed image
+just vm                     # Build VM disk image (qcow2)
+just test                   # Build VM + boot with qemu
+```
+
+Prerequisites for VM testing: `sudo dnf install @virtualization`
+
 ## Directory Structure
 
 ```
+Justfile                        # Build/test/ISO commands (just)
 recipes/recipe.yml              # BlueBuild recipe (9 modules)
 files/
 ├── scripts/

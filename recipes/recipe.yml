@@ -14,7 +14,7 @@ image-version: latest # latest is also supported if you want new updates ASAP
 modules:
   - type: script
     scripts:
-      - files/scripts/detect-gnome-removals.sh
+      - detect-gnome-removals.sh
   - type: script
     snippets:
       - |

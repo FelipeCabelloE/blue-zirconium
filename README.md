@@ -31,6 +31,26 @@ bluebuild validate recipes/recipe.yml
 bluebuild build recipes/recipe.yml
 ```
 
+## Local Testing
+
+Prerequisites: `sudo dnf install @virtualization`
+
+```bash
+# Validate and build
+just validate
+bluebuild build recipes/recipe.yml
+
+# Push to registry
+bluebuild login && bluebuild build --push recipes/recipe.yml
+
+# Build a VM disk image and boot it
+just vm                # qcow2 via bootc-image-builder
+just test              # vm + launch in qemu
+
+# Generate installer ISO
+just generate-iso-image
+```
+
 ## Relationship to Bluefin DX and Zirconium
 
 [Zirconium](https://github.com/felipecabelloe/zirconium) is a mkosi-based niri/DMS image that builds from scratch. blue-zirconium takes a simpler approach: it layers on top of Bluefin DX using BlueBuild, inheriting everything Bluefin DX provides and only replacing GNOME with niri + DMS. This eliminates the need to replicate Bluefin's package selection, fetch-filter patterns, or lifecycle scripts.

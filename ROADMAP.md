@@ -435,12 +435,13 @@ Already uses `blue-build/github-action@v1.11`. The recipe path was updated from 
 | Area | Files | Source |
 |------|-------|--------|
 | Recipe | `recipes/recipe.yml` | Written from scratch (9 modules) |
+| Build tooling | `Justfile` | Written from scratch (6 recipes) |
 | GNOME detection | `files/scripts/detect-gnome-removals.sh` | Written from scratch |
 | System configs | 7 files (presets ×2, PAM, tmpfiles, greetd, niri, portals) | Adapted from Zirconium |
 | CI | `.github/workflows/build.yml` | Already exists |
 | Auth/certs | `cosign.pub` | Already exists |
 | Docs | `README.md`, `AGENTS.md`, `ROADMAP.md` | Updated or written |
-| **Total** | **~12 files** | |
+| **Total** | **~13 files** | |
 
 ### Removed from mkosi roadmap
 
@@ -460,6 +461,6 @@ Already uses `blue-build/github-action@v1.11`. The recipe path was updated from 
 
 - **NVIDIA variant**: Profile with akmods COPR + nvidia-container-toolkit. BlueBuild supports `akmods` module type natively.
 - **Multi-arch**: When niri and DMS support arm64, add `platforms: [linux/amd64, linux/arm64]` to recipe.
-- **ISO generation**: `bluebuild generate-iso recipe recipes/recipe.yml` for offline installers.
+- **CI ISO generation**: Add a `workflow_dispatch` job to build and upload installer ISOs as release artifacts.
 - **Image pruning**: If the GNOME removal doesn't reclaim enough space, consider `dnf remove` for `gtk4` and other GNOME libraries (risky — may break non-GNOME apps).
-- **Pre-built COPR RPMS**: If COPR build latency is an issue, mirror packages to GHCR as OCI artifacts.
+- **Pre-built COPR RPMs**: If COPR build latency is an issue, mirror packages to GHCR as OCI artifacts.

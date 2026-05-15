@@ -3,3 +3,4 @@ cosign.private
 /Containerfile
 /zirconium/
 /bluefin/
+/.bluebuild-scripts_*
