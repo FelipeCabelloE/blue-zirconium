@@ -1,0 +1,4 @@
+enable greetd.service
+enable docker.socket
+enable podman.socket
+enable foot-server.socket

@@ -17,7 +17,7 @@ The previous mkosi-based roadmap required 33 files, 2 submodules, lifecycle scri
 | Submodules | `zirconium/` + `bluefin/` + nested submodules | None. Config files copied once, owned by this repo |
 | Lifecycle | `prepare.chroot` + `postinst.chroot` + validation scripts | Modules in recipe.yml — DNF removes GNOME, DNF installs niri/DMS, files copy configs |
 | CI pipeline | Custom mkosi workflow with skopeo version detection | Existing `blue-build/github-action` — just update recipe path |
-| File count | ~33 files | ~12 files |
+| File count | ~33 files | ~13 files |
 | Complexity | 7 phases | 4 phases |
 
 ### What you get from `bluefin-dx`
@@ -29,6 +29,30 @@ The only change: GNOME is removed and replaced with niri + DMS.
 ### What you need from Zirconium
 
 ~10 config files (greetd, niri, DMS, systemd presets, PAM, tmpfiles) and 3 COPR repo files. All copied once as reference — no submodule dependency.
+
+### GNOME removal: auto-detected at build time
+
+A script (`files/scripts/detect-gnome-removals.sh`) runs during the build and identifies GNOME packages to remove:
+
+1. **Primary filter**: `rpm -qa | grep '^gnome-'` — catches all packages with the gnome-* prefix. This is safe because shared system infrastructure (NetworkManager, mesa, gvfs, etc.) doesn't use the gnome- prefix.
+2. **KEEP list** — 3 packages (gnome-keyring, gnome-keyring-pam, gnome-disk-utility) that start with gnome- but provide system-wide services
+3. **Targeted list** — System packages that don't use the gnome- prefix but are GNOME-specific: `gdm` and `ptyxis`
+4. **EXTRA list** — GNOME packages added by bluefin that don't start with `gnome-`: `adw-gtk3-theme`, `nautilus-gsconnect`, `firewall-config` (`gnome-tweaks` is caught by the primary filter)
+5. **Comps XML** (supplementary only) — Fetched for dry-run reporting to show what @gnome-desktop packages are intentionally left alone (system infrastructure)
+
+When bluefin-dx rebases to a new Fedora version, the gnome-* filter is version-agnostic — no manual updates needed.
+
+**DMS replaces every `gnome-settings-daemon` plugin:**
+
+| GSD plugin | DMS replacement |
+|---|---|
+| `gsd-power` (backlight, idle, suspend) | DMS idle/power management + brightness IPC |
+| `gsd-media-keys` (volume, media) | `dms ipc call audio increment/decrement/mute` |
+| `gsd-color` (night light) | DMS night mode / gamma control |
+| `gsd-background` (wallpaper) | DMS wallpaper manager |
+| `gsd-sound` (system sounds) | DMS Qt multimedia feedback |
+| `gsd-clipboard` | DMS clipboard history |
+| `gsd-keyboard` (layout sync) | niri `config.kdl` |
 
 ---
 
@@ -46,14 +70,16 @@ The only change: GNOME is removed and replaced with niri + DMS.
                       ┌──────────────▼───────────────┐
                       │     BlueBuild recipe.yml       │
                       │                                │
-                      │  1. Remove GNOME packages      │
-                      │  2. Install niri + DMS +       │
-                      │     greetd + foot (from COPRs) │
-                      │  3. Copy system configs        │
-                      │     (greetd, niri, DMS,        │
-                      │      systemd presets, PAM)     │
-                      │  4. Set systemd presets        │
-                      │  5. Validate                   │
+                       │  1. Remove GNOME packages      │
+                       │  2. Guard GNOME user hooks     │
+                       │  3. Install niri + DMS +       │
+                       │     greetd + foot (from COPRs) │
+                       │  4. Copy system configs        │
+                       │     (greetd, niri, portals,    │
+                       │      systemd presets, PAM)     │
+                       │  5. Fix PAM for greetd         │
+                       │  6. Set systemd presets        │
+                       │  7. Validate                   │
                       └──────────────┬───────────────┘
                                      │ push to GHCR
                       ┌──────────────▼───────────────┐
@@ -78,6 +104,8 @@ blue-zirconium/
 │   │   ├── yalter-niri-git.repo          # enabled=0, COPR for niri
 │   │   ├── avengemedia-dms-git.repo      # enabled=0, COPR for DMS + danklinux dep
 │   │   └── avengemedia-danklinux.repo    # enabled=0, COPR for danklinux
+│   ├── scripts/
+│   │   └── detect-gnome-removals.sh      # Auto-detects GNOME packages from Fedora comps
 │   └── system/
 │       └── usr/
 │           ├── lib/systemd/system-preset/
@@ -88,12 +116,14 @@ blue-zirconium/
 │           │   └── greetd-spawn               # PAM for greetd
 │           ├── lib/tmpfiles.d/
 │           │   └── 99-blue-zirconium.conf      # Factory defaults
-│           └── share/
+│   └── share/
 │               ├── greetd/
 │               │   └── config.toml             # DMS greeter session
-│               └── niri/
-│                   ├── config.kdl              # Default niri config
-│                   └── local.kdl               # System-wide overrides (empty)
+│               ├── niri/
+│               │   ├── config.kdl              # Default niri config
+│               │   └── local.kdl               # System-wide overrides (empty)
+│               └── xdg-desktop-portal/
+│                   └── portals.conf            # Portal backend: gtk;gnome
 ├── cosign.pub
 ├── .github/workflows/build.yml # Already works — minor updates
 ├── AGENTS.md
@@ -131,36 +161,24 @@ modules:
       - COPY files/copr-repos/avengemedia-danklinux.repo /etc/yum.repos.d/
 
   # Step 2: Remove GNOME desktop components
-  - type: dnf
-    remove:
-      packages:
-        - gnome-shell
-        - gdm
-        - gnome-session
-        - gnome-initial-setup
-        - gnome-software
-        - gnome-tweaks
-        - gnome-console
-        - gnome-text-editor
-        - evince
-        - eog
-        - totem
-        - gnome-calculator
-        - gnome-calendar
-        - gnome-clocks
-        - gnome-logs
-        - gnome-characters
-        - gnome-font-viewer
-        - gnome-connections
-        - snapshot
-        - baobab
-        - file-roller
-        - loupe
-        - adw-gtk3-theme
-        - gnome-browser-connector
-        - gnome-tour
+  # Auto-detected from Fedora comps XML at build time.
+  # Also removes orphaned GNOME Shell extensions post-removal.
+  # See files/scripts/detect-gnome-removals.sh for the detection logic.
+  - type: script
+    scripts:
+      - files/scripts/detect-gnome-removals.sh
 
-  # Step 3: Install niri + DMS stack from COPRs
+  # Step 3: Guard bluefin's GNOME-specific user-setup hooks
+  # 10-theming.sh writes dconf keys for GNOME Shell extensions — harmless
+  # but noisy on niri. Disable it; GDK scale setting is handled by DMS.
+  - type: script
+    snippets:
+      - |
+        if [ -f /usr/share/ublue-os/user-setup.hooks.d/10-theming.sh ]; then
+          mv /usr/share/ublue-os/user-setup.hooks.d/10-theming.sh{,.disabled}
+        fi
+
+  # Step 4: Install niri + DMS stack from COPRs
   - type: dnf
     install:
       packages:
@@ -190,13 +208,23 @@ modules:
         - udiskie
         - xdg-desktop-portal-gtk
 
-  # Step 4: Copy system config files
+  # Step 5: Copy system config files
+  # Includes: niri config, greetd config, PAM, tmpfiles, presets, portals.conf
   - type: files
     files:
       - source: system
         destination: /
 
-  # Step 5: Enable systemd presets
+  # Step 6: Fix PAM for greetd + DMS
+  # greetd RPM installs /etc/pam.d/greetd with gnome_keyring.so on wrong
+  # auth/session lines. Fix the ordering and install DMS fingerprint-auth PAM.
+  - type: script
+    snippets:
+      - |
+        sed -i '/gnome_keyring.so/ s/-auth/auth/; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
+        cp /usr/share/quickshell/dms/assets/pam/* /usr/lib/pam.d/
+
+  # Step 7: Enable systemd presets
   - type: script
     snippets:
       - systemctl preset greetd.service
@@ -204,16 +232,25 @@ modules:
       - systemctl preset podman.socket
       - systemctl preset foot-server.socket
 
-  # Step 6: Validate
+  # Step 8: Validate
   - type: script
     snippets:
       - stat /usr/bin/niri
       - stat /usr/bin/dms
       - stat /usr/bin/greetd
       - stat /usr/bin/foot
-      - '! test -f /usr/bin/gnome-shell || { echo "GNOME still present!"; exit 1; }'
+      - |
+        # Verify GNOME is fully removed
+        for pkg in gnome-shell gnome-settings-daemon gdm; do
+          ! rpm -q "$pkg" >/dev/null 2>&1 || { echo "$pkg still present!"; exit 1; }
+        done
+      - |
+        # Verify GNOME infrastructure we need is still there
+        for pkg in gnome-keyring nautilus xdg-desktop-portal-gnome; do
+          rpm -q "$pkg" >/dev/null 2>&1 || { echo "$pkg missing!"; exit 1; }
+        done
 
-  # Step 7: Default Flatpaks
+  # Step 9: Default Flatpaks
   - type: default-flatpaks
     notify: true
     system:
@@ -233,6 +270,61 @@ If this proves unreliable, pin to `image-version: 42` and bump manually.
 ### COPR isolation
 
 All COPR `.repo` files use `enabled=0`. The `containerfile` module copies them into the image, and the DNF module references them for the install transaction. After the build, they remain `enabled=0` in the image — matching bluefin's validated-repos security policy.
+
+### Detection script: `files/scripts/detect-gnome-removals.sh`
+
+Runs during the build and identifies GNOME packages via naming convention:
+
+**Strategy rationale:**
+The `@gnome-desktop` comps group contains ~85 packages, but only ~40 are actually GNOME. The other ~45 are shared system infrastructure (NetworkManager, mesa, gvfs, librsvg2, toolbox, etc.) that happen to be grouped there. Removing them would break networking, graphics, and file system access.
+
+The script takes a safer approach: **remove by naming convention** (`gnome-*` prefix) rather than by comps group membership. This catches all GNOME-specific packages while leaving system infrastructure untouched.
+
+**Flow:**
+```
+Query RPM database for installed gnome-* packages
+    │
+    ▼
+Subtract KEEP_LIST (3 packages: keyring, disk-utility)
+    │
+    ▼
+Add targeted non-gnome- packages (gdm, ptyxis)
+    │
+    ▼
+Add bluefin extras (adw-gtk3-theme, gnome-tweaks, …)
+    │
+    ▼
+Fetch comps XML (supplementary — for dry-run reporting only)
+    → Shows what @gnome-desktop packages are being left alone
+    │
+    ▼
+dnf remove
+     ↑
+   DRY_RUN=true   → preview only, no changes
+   DEBUG=true     → enable bash command tracing
+```
+
+**Keep list rationale:** These gnome-* packages provide system-wide services that non-GNOME apps need.
+
+| Package | Why kept |
+|---------|----------|
+| `gnome-keyring` / `gnome-keyring-pam` | Secret Service — SSH agent, password storage |
+| `gnome-disk-utility` | Disk management GUI — useful, not GNOME-shell-dependent |
+
+**Post-removal cleanup** (built into the script):
+- Removes orphaned GNOME Shell extensions at `/usr/share/gnome-shell/extensions/*`
+
+**Guard bluefin's GNOME-specific user hooks:**
+bluefin-dx ships `10-theming.sh` that writes dconf keys for GNOME Shell extensions and GDK scale. On niri, these writes are harmless but noisy. The recipe disables this hook; DMS handles theming and GDK scaling natively.
+
+**PAM fix for greetd + gnome-keyring:**
+The `greetd` RPM installs `/etc/pam.d/greetd` with `gnome_keyring.so` on the wrong auth/session lines (`-auth` instead of `auth`). Without the fix, the keyring fails to auto-unlock at login. Zirconium's postinst includes this fix — the recipe replicates it. Additionally, DMS provides optimized PAM files for fingerprint auth that are copied from its assets.
+
+**Portal backend configuration:**
+`xdg-desktop-portal` auto-selects backends based on `$XDG_CURRENT_DESKTOP`. On niri (unregistered desktop), the selection may fall back incorrectly. The shipped `portals.conf` explicitly sets `[preferred] default=gtk;gnome` to ensure the GTK file-chooser portal is primary, with GNOME screencast/screenshot portal as fallback.
+
+**Packages intentionally NOT removed** (system infrastructure from @gnome-desktop groups):
+`NetworkManager*`, `mesa-*`, `gvfs-*`, `librsvg2`, `glib-networking`, `avahi`, `toolbox`, `xdg-desktop-portal`, `polkit`, `dconf`, `nautilus`, `xdg-desktop-portal-gnome`, `xdg-desktop-portal-gtk`, `fprintd-pam`, `systemd-oomd-defaults`, and others.
 
 ---
 
@@ -254,6 +346,7 @@ All config files are adapted from the `zirconium/` directory (kept locally for r
 | `system/usr/share/greetd/config.toml` | `zirconium/.../greetd/config.toml` | Verbatim |
 | `system/usr/share/niri/config.kdl` | N/A | Ship a minimal niri config with DMS IPC keybinds |
 | `system/usr/share/niri/local.kdl` | N/A | Empty placeholder |
+| `system/usr/share/xdg-desktop-portal/portals.conf` | N/A | Set `[preferred] default=gtk;gnome` for portal backends |
 
 ### Systemd presets
 
@@ -329,12 +422,13 @@ No new CI files needed.
 | Area | Files | Source |
 |------|-------|--------|
 | Recipe | `recipes/recipe.yml` | Written from scratch |
+| GNOME detection | `files/scripts/detect-gnome-removals.sh` | Written from scratch |
 | COPR repos | 3 `.repo` files | Copied from Zirconium, verbatim |
 | System configs | 6 files (presets, PAM, tmpfiles, greetd, niri) | Adapted from Zirconium |
 | CI | `.github/workflows/build.yml` | Already exists, trivial update |
 | Auth/certs | `cosign.pub` | Already exists |
 | Docs | `README.md`, `AGENTS.md`, `ROADMAP.md` | Updated or written |
-| **Total** | **~12 files** | |
+| **Total** | **~13 files** | |
 
 ### Removed from mkosi roadmap
 
