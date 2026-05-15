@@ -22,6 +22,8 @@ jobs:
         run: curl -sL https://rclone.org/install.sh | sudo bash
       - name: Login to GHCR
         run: echo "${{ github.token }}" | sudo podman login ghcr.io -u ${{ github.actor }} --password-stdin
+      - name: Pull container image into local storage
+        run: sudo podman pull ghcr.io/felipecabelloe/blue-zirconium:${{ inputs.tag }}
       - name: Create output directories
         run: mkdir -p ${{ github.workspace }}/output ${{ github.workspace }}/cache
       - name: Build qcow2
