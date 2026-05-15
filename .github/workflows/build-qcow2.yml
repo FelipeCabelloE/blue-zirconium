@@ -20,13 +20,15 @@ jobs:
     steps:
       - name: Install rclone
         run: curl -sL https://rclone.org/install.sh | sudo bash
+      - name: Create output directories
+        run: mkdir -p ${{ github.workspace }}/output ${{ github.workspace }}/cache
       - name: Build qcow2
         run: |
           sudo podman run --rm --privileged \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             -v ${{ github.workspace }}/output:/output \
-            -v /var/tmp:/var/tmp \
             -v ${{ github.workspace }}/cache:/var/cache/image-builder/store \
+            -v /var/tmp:/var/tmp \
             ghcr.io/osbuild/image-builder-cli:latest \
             build qcow2 \
             --output-dir /output \
