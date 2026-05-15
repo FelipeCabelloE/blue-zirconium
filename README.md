@@ -1,43 +1,56 @@
 # blue-zirconium &nbsp; [![bluebuild build badge](https://github.com/felipecabelloe/blue-zirconium/actions/workflows/build.yml/badge.svg)](https://github.com/felipecabelloe/blue-zirconium/actions/workflows/build.yml)
 
-See the [BlueBuild docs](https://blue-build.org/how-to/setup/) for quick setup instructions for setting up your own repository based on this template.
+A custom Fedora Atomic desktop image based on [Bluefin DX](https://projectbluefin.io/), replacing GNOME with [niri](https://github.com/YaLTeR/niri) + [DankMaterialShell](https://github.com/avengemedia/DankMaterialShell).
 
-After setup, it is recommended you update this README to describe your custom image.
+## Features
+
+- Inherits everything from Bluefin DX — Docker, VS Code, Cockpit, libvirt, ROCm, Homebrew, Flathub, Tailscale, fish/zsh, starship, just, and more
+- Niri scrollable-tiling Wayland compositor
+- DankMaterialShell for status bar, notifications, launcher, control center, and clipboard
+- greetd + DMS greeter as the login manager
+- All GNOME desktop components removed
 
 ## Installation
 
-> [!WARNING]  
+> [!WARNING]
 > [This is an experimental feature](https://www.fedoraproject.org/wiki/Changes/OstreeNativeContainerStable), try at your own discretion.
 
-To rebase an existing atomic Fedora installation to the latest build:
+From an existing Fedora Atomic system:
 
-- First rebase to the unsigned image, to get the proper signing keys and policies installed:
-  ```
-  rpm-ostree rebase ostree-unverified-registry:ghcr.io/felipecabelloe/blue-zirconium:latest
-  ```
-- Reboot to complete the rebase:
-  ```
-  systemctl reboot
-  ```
-- Then rebase to the signed image, like so:
-  ```
-  rpm-ostree rebase ostree-image-signed:docker://ghcr.io/felipecabelloe/blue-zirconium:latest
-  ```
-- Reboot again to complete the installation
-  ```
-  systemctl reboot
-  ```
+```bash
+# First rebase to the unsigned image to get signing keys
+sudo bootc switch ghcr.io/felipecabelloe/blue-zirconium:latest
+```
 
-The `latest` tag will automatically point to the latest build. That build will still always use the Fedora version specified in `recipe.yml`, so you won't get accidentally updated to the next major version.
+The `latest` tag tracks Bluefin DX rolling releases. Reboot to complete the installation.
 
-## ISO
+## Building
 
-If build on Fedora Atomic, you can generate an offline ISO with the instructions available [here](https://blue-build.org/how-to/generate-iso/#_top). These ISOs cannot unfortunately be distributed on GitHub for free due to large sizes, so for public projects something else has to be used for hosting.
+```bash
+bluebuild validate recipes/recipe.yml
+bluebuild build recipes/recipe.yml
+```
+
+## Relationship to Bluefin DX and Zirconium
+
+[Zirconium](https://github.com/felipecabelloe/zirconium) is a mkosi-based niri/DMS image that builds from scratch. blue-zirconium takes a simpler approach: it layers on top of Bluefin DX using BlueBuild, inheriting everything Bluefin DX provides and only replacing GNOME with niri + DMS. This eliminates the need to replicate Bluefin's package selection, fetch-filter patterns, or lifecycle scripts.
+
+## Default Flatpaks
+
+Installed as system flatpaks at first boot:
+- [Zen Browser](https://zen-browser.app/)
+- [Calibre](https://calibre-ebook.com/)
+
+Flathub user repo is configured for installing additional flatpaks.
 
 ## Verification
 
-These images are signed with [Sigstore](https://www.sigstore.dev/)'s [cosign](https://github.com/sigstore/cosign). You can verify the signature by downloading the `cosign.pub` file from this repo and running the following command:
+These images are signed with [Sigstore](https://www.sigstore.dev/)'s [cosign](https://github.com/sigstore/cosign). You can verify the signature by downloading the `cosign.pub` file from this repo and running:
 
 ```bash
 cosign verify --key cosign.pub ghcr.io/felipecabelloe/blue-zirconium
 ```
+
+## License
+
+MIT

@@ -120,8 +120,7 @@ blue-zirconium/
 │               ├── greetd/
 │               │   └── config.toml             # DMS greeter session
 │               ├── niri/
-│               │   ├── config.kdl              # Default niri config (latam layout)
-│               │   └── local.kdl               # System-wide overrides (empty)
+│               │   └── config.kdl              # Default niri config (latam layout)
 │               └── xdg-desktop-portal/
 │                   └── portals.conf            # Portal backend: gtk;gnome
 ├── cosign.pub
@@ -138,7 +137,7 @@ blue-zirconium/
 |--------|--------|
 | **Remove** reference clones | `zirconium/`, `bluefin/` — untracked git repos, not submodules |
 | **Remove** mkosi-era stubs | `modules/`, `files/scripts/example.sh`, `files/system/*/.gitkeep` |
-| **Create** config files | 8 files: system/user presets (keyring services added to user preset), PAM greetd-spawn, tmpfiles (includes `f /etc/greetd/niri/config.kdl`), greetd config, niri config.kdl (latam layout, DMS IPC binds), local.kdl (empty), portals.conf |
+| **Create** config files | 7 files: system/user presets (keyring services added to user preset), PAM greetd-spawn, tmpfiles (includes `f /etc/greetd/niri/config.kdl`), greetd config, niri config.kdl (latam layout, DMS IPC binds), portals.conf |
 | **Update** recipe.yml | Changed `base-image` to `bluefin-dx`, `image-version` to `latest`, description |
 | **Update** .gitignore | Added `/bluefin/`, `/zirconium/` |
 
@@ -151,7 +150,9 @@ blue-zirconium/
 
 ---
 
-## Phase 1 — Recipe
+## Phase 1 — Recipe ✓
+
+**Status: Complete**
 
 ### `recipes/recipe.yml`
 
@@ -338,7 +339,9 @@ The `greetd` RPM installs `/etc/pam.d/greetd` with `gnome_keyring.so` on the wro
 
 ---
 
-## Phase 2 — System files & configuration
+## Phase 2 — System files & configuration ✓
+
+**Status: Complete**
 
 ### Reference source
 
@@ -352,7 +355,7 @@ All config files were adapted from the Zirconium project's `mkosi.extra/` direct
 | `system/usr/lib/tmpfiles.d/99-blue-zirconium.conf` | Greetd config symlink, greetd/niri directory, greetd/niri config.kdl (empty) |
 | `system/usr/share/greetd/config.toml` | Verbatim from zirconium |
 | `system/usr/share/niri/config.kdl` | Written from scratch: DMS IPC keybinds, latam layout, window management |
-| `system/usr/share/niri/local.kdl` | Empty placeholder |
+
 | `system/usr/share/xdg-desktop-portal/portals.conf` | `[preferred] default=gtk;gnome` |
 
 ### Systemd presets
@@ -399,17 +402,13 @@ f /etc/greetd/niri/config.kdl 0644 - - -
 
 ---
 
-## Phase 3 — CI/CD
+## Phase 3 — CI/CD ✓
+
+**Status: Complete**
 
 ### Current workflow (`.github/workflows/build.yml`)
 
-Already uses `blue-build/github-action@v1.11` — the only change needed is updating the recipe path. The workflow supports:
-- Daily scheduled builds (6:00 UTC)
-- Push and PR triggers
-- Cosign signing via `SIGNING_SECRET`
-- `maximize_build_space: true`
-
-No new CI files needed.
+Already uses `blue-build/github-action@v1.11`. The recipe path was updated from `recipe.yml` to `recipes/recipe.yml`.
 
 ### Future additions (post-MVP)
 
@@ -419,13 +418,15 @@ No new CI files needed.
 
 ---
 
-## Phase 4 — Documentation
+## Phase 4 — Documentation ✓
 
-| File | Action |
-|------|--------|
-| `README.md` | Update: blue-zirconium identity, `bootc switch` instructions, relationship to bluefin-dx and zirconium |
-| `AGENTS.md` | Write: build commands, file conventions, how to add packages, COPR handling |
-| `ROADMAP.md` | This file — mark completed phases as done |
+**Status: Complete**
+
+| File | Action | Status |
+|------|--------|--------|
+| `README.md` | Rewritten: blue-zirconium identity, `bootc switch` instructions, relationship to bluefin-dx and zirconium | ✓ |
+| `AGENTS.md` | Written: build commands, file conventions, how to add packages, COPR handling | ✓ |
+| `ROADMAP.md` | This file — mark completed phases as done | ✓ |
 
 ---
 
@@ -435,7 +436,7 @@ No new CI files needed.
 |------|-------|--------|
 | Recipe | `recipes/recipe.yml` | Written from scratch (9 modules) |
 | GNOME detection | `files/scripts/detect-gnome-removals.sh` | Written from scratch |
-| System configs | 8 files (presets ×2, PAM, tmpfiles, greetd, niri ×2, portals) | Adapted from Zirconium |
+| System configs | 7 files (presets ×2, PAM, tmpfiles, greetd, niri, portals) | Adapted from Zirconium |
 | CI | `.github/workflows/build.yml` | Already exists |
 | Auth/certs | `cosign.pub` | Already exists |
 | Docs | `README.md`, `AGENTS.md`, `ROADMAP.md` | Updated or written |

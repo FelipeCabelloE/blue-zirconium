@@ -1,3 +1,0 @@
-// System-wide overrides
-// This file is included by config.kdl and can be modified by the system
-// admin or by future package updates without touching the main config.
