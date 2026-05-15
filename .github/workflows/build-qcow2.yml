@@ -27,7 +27,6 @@ jobs:
       - name: Build qcow2
         run: |
           sudo podman run --rm --privileged \
-          -v /root/.config/containers/auth.json:/root/.config/containers/auth.json:ro \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             -v ${{ github.workspace }}/output:/output \
             -v ${{ github.workspace }}/cache:/var/cache/image-builder/store \
