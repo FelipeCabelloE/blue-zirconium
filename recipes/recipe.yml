@@ -4,14 +4,13 @@
 name: blue-zirconium
 # description will be included in the image's metadata
 description: Bluefin DX with niri + DankMaterialShell
-
 # the base image to build on top of (FROM) and the version tag to use
 base-image: ghcr.io/ublue-os/bluefin-dx
 image-version: latest # latest is also supported if you want new updates ASAP
-
 # module configuration, executed in order
 # you can include multiple instances of the same module
 modules:
+  # Step 1
   - type: script
     scripts:
       - detect-gnome-removals.sh
@@ -21,6 +20,7 @@ modules:
         if [ -f /usr/share/ublue-os/user-setup.hooks.d/10-theming.sh ]; then
           mv /usr/share/ublue-os/user-setup.hooks.d/10-theming.sh{,.disabled}
         fi
+  # Step 2
   - type: dnf
     repos:
       copr:
@@ -53,27 +53,23 @@ modules:
         - cava
         - udiskie
         - xdg-desktop-portal-gtk
-
+  # Step 3
   - type: files
     files:
       - source: system
         destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
-
   # Step 5: Fix PAM for greetd + DMS
   - type: script
     snippets:
       - |
         sed -i '/gnome_keyring.so/ s/-auth/auth/; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
         cp /usr/share/quickshell/dms/assets/pam/* /usr/lib/pam.d/
-
   # Step 6: Enable systemd presets
   - type: script
     snippets:
       - systemctl preset greetd.service
       - systemctl preset docker.socket
       - systemctl preset podman.socket
-      - systemctl preset foot-server.socket
-
   # Step 7: Validate
   - type: script
     snippets:
@@ -89,7 +85,6 @@ modules:
         for pkg in gnome-keyring nautilus xdg-desktop-portal-gnome; do
           rpm -q "$pkg" >/dev/null 2>&1 || { echo "$pkg missing!"; exit 1; }
         done
-
   - type: default-flatpaks
     configurations:
       - notify: true # Send notification after install/uninstall is finished (true/false)
@@ -99,5 +94,4 @@ modules:
           - app.zen_browser.zen
           - com.calibre_ebook.calibre
       - scope: user # Also add Flathub user repo, but no user packages
-
   - type: signing # this sets up the proper policy & signing files for signed images to work fully

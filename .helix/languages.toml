@@ -2,9 +2,13 @@
 name = "yaml"
 auto-format = true
 language-servers = ["yaml-language-server"]
+formatter = { command = "yq", args = ["-P"] }
 
 [language-server.yaml-language-server]
-config = { yaml = { schemas = { "https://schema.blue-build.org/recipe-v1.json" = ["recipes/recipe.yml"] } } }
+command = ".helix/yaml-lsp-wrapper.sh"
+config = { yaml = { schemas = { ".helix/recipe-v1.json" = [
+  "recipes/recipe.yml",
+] } } }
 
 [[language]]
 name = "bash"
