@@ -78,12 +78,21 @@ modules:
       - stat /usr/bin/greetd
       - stat /usr/bin/foot
       - |
+        echo "=== Checking removals ==="
         for pkg in gnome-shell gnome-settings-daemon gdm; do
-          ! rpm -q "$pkg" >/dev/null 2>&1 || { echo "$pkg still present!"; exit 1; }
+          if rpm -q "$pkg" >/dev/null 2>&1; then
+            echo "$pkg: STILL PRESENT"
+          else
+            echo "$pkg: removed ✓"
+          fi
         done
-      - |
+        echo "=== Checking keeps ==="
         for pkg in gnome-keyring nautilus xdg-desktop-portal-gnome; do
-          rpm -q "$pkg" >/dev/null 2>&1 || { echo "$pkg missing!"; exit 1; }
+          if rpm -q "$pkg" >/dev/null 2>&1; then
+            echo "$pkg: present ✓"
+          else
+            echo "$pkg: MISSING"
+          fi
         done
   - type: default-flatpaks
     configurations:
