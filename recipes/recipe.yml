@@ -12,25 +12,84 @@ image-version: latest # latest is also supported if you want new updates ASAP
 # module configuration, executed in order
 # you can include multiple instances of the same module
 modules:
+  - type: script
+    scripts:
+      - files/scripts/detect-gnome-removals.sh
+  - type: script
+    snippets:
+      - |
+        if [ -f /usr/share/ublue-os/user-setup.hooks.d/10-theming.sh ]; then
+          mv /usr/share/ublue-os/user-setup.hooks.d/10-theming.sh{,.disabled}
+        fi
+  - type: dnf
+    repos:
+      copr:
+        - yalter/niri-git
+        - avengemedia/dms-git
+        - avengemedia/danklinux
+    install:
+      packages:
+        - niri
+        - xwayland-satellite
+        - dms
+        - dms-cli
+        - dms-greeter
+        - dgop
+        - dsearch
+        - greetd
+        - greetd-selinux
+        - foot
+        - wl-clipboard
+        - wtype
+        - waypipe
+        - brightnessctl
+        - iio-niri
+        - satty
+        - fcitx5
+        - fcitx5-mozc
+        - qt6ct
+        - breeze-qt6
+        - qt6-qtimageformats
+        - playerctl
+        - cava
+        - udiskie
+        - xdg-desktop-portal-gtk
+
   - type: files
     files:
       - source: system
         destination: / # copies files/system/* (* means everything inside it) into your image's root folder /
 
-  - type: dnf
-    repos:
-      copr:
-        - atim/starship
-    install:
-      packages:
-        - micro
-        - starship
-    remove:
-      packages:
-        # example: removing firefox (in favor of the flatpak)
-        # "firefox" is the main package, "firefox-langpacks" is a dependency
-        - firefox
-        - firefox-langpacks # also remove firefox dependency (not required for all packages, this is a special case)
+  # Step 5: Fix PAM for greetd + DMS
+  - type: script
+    snippets:
+      - |
+        sed -i '/gnome_keyring.so/ s/-auth/auth/; /gnome_keyring.so/ s/-session/session/' /etc/pam.d/greetd
+        cp /usr/share/quickshell/dms/assets/pam/* /usr/lib/pam.d/
+
+  # Step 6: Enable systemd presets
+  - type: script
+    snippets:
+      - systemctl preset greetd.service
+      - systemctl preset docker.socket
+      - systemctl preset podman.socket
+      - systemctl preset foot-server.socket
+
+  # Step 7: Validate
+  - type: script
+    snippets:
+      - stat /usr/bin/niri
+      - stat /usr/bin/dms
+      - stat /usr/bin/greetd
+      - stat /usr/bin/foot
+      - |
+        for pkg in gnome-shell gnome-settings-daemon gdm; do
+          ! rpm -q "$pkg" >/dev/null 2>&1 || { echo "$pkg still present!"; exit 1; }
+        done
+      - |
+        for pkg in gnome-keyring nautilus xdg-desktop-portal-gnome; do
+          rpm -q "$pkg" >/dev/null 2>&1 || { echo "$pkg missing!"; exit 1; }
+        done
 
   - type: default-flatpaks
     configurations:
@@ -38,8 +97,8 @@ modules:
         scope: system
         # If no repo information is specified, Flathub will be used by default
         install: # system flatpaks we want all users to have and not remove
-          - org.mozilla.firefox
-          - org.gnome.Loupe
+          - app.zen_browser.zen
+          - com.calibre_ebook.calibre
       - scope: user # Also add Flathub user repo, but no user packages
 
   - type: signing # this sets up the proper policy & signing files for signed images to work fully

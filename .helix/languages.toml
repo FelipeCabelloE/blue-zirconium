@@ -1,0 +1,18 @@
+[[language]]
+name = "yaml"
+auto-format = true
+language-servers = ["yaml-language-server"]
+
+[language-server.yaml-language-server]
+config = { yaml = { schemas = { "https://schema.blue-build.org/recipe-v1.json" = ["recipes/recipe.yml"] } } }
+
+[[language]]
+name = "bash"
+auto-format = true
+formatter = { command = "shfmt", args = ["-i", "4", "-ci"] }
+language-servers = ["bash-language-server"]
+
+[[language]]
+name = "toml"
+auto-format = true
+language-servers = ["taplo"]
