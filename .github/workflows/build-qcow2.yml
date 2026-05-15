@@ -20,12 +20,14 @@ jobs:
     steps:
       - name: Install rclone
         run: curl -sL https://rclone.org/install.sh | sudo bash
+      - name: Login to GHCR
+        run: echo "${{ github.token }}" | sudo podman login ghcr.io -u ${{ github.actor }} --password-stdin
       - name: Create output directories
         run: mkdir -p ${{ github.workspace }}/output ${{ github.workspace }}/cache
       - name: Build qcow2
         run: |
           sudo podman run --rm --privileged \
-            -v $HOME/.config/containers/auth.json:/root/.config/containers/auth.json:ro \
+          -v /root/.config/containers/auth.json:/root/.config/containers/auth.json:ro \
             -v /var/lib/containers/storage:/var/lib/containers/storage \
             -v ${{ github.workspace }}/output:/output \
             -v ${{ github.workspace }}/cache:/var/cache/image-builder/store \
