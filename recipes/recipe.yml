@@ -35,7 +35,7 @@ modules:
         - dms-cli
         - dms-greeter
         - dgop
-        - dsearch
+        - danksearch
         - greetd
         - greetd-selinux
         - foot
