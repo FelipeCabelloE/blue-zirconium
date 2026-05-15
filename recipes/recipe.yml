@@ -43,12 +43,11 @@ modules:
         - wtype
         - waypipe
         - brightnessctl
-        - iio-niri
-        - satty
+        - iio-sensor-proxy
+        - swappy
         - fcitx5
         - fcitx5-mozc
         - qt6ct
-        - breeze-qt6
         - qt6-qtimageformats
         - playerctl
         - cava
