@@ -46,6 +46,8 @@ jobs:
         run: |
           mkdir -p ~/.config/rclone
           echo "$RCLONE_CONF_CONTENT" > "$RCLONE_CONFIG"
-          rclone copy ${{ github.workspace }}/output/qcow2/disk.qcow2 \
+          qcow2_file=$(find ${{ github.workspace }}/output -name '*.qcow2' -type f | head -1)
+          echo "Uploading: $qcow2_file"
+          rclone copy "$qcow2_file" \
             pcloud:blue-zirconium/blue-zirconium-${{ inputs.tag }}.qcow2 \
             --ignore-times
