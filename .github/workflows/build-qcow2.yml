@@ -41,9 +41,11 @@ jobs:
       - name: Upload to pCloud
         if: ${{ inputs.upload-to-pcloud }}
         env:
-          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+          RCLONE_CONFIG: /home/runner/.config/rclone/rclone.conf
+          RCLONE_CONF_CONTENT: ${{ secrets.RCLONE_CONFIG }}
         run: |
           mkdir -p ~/.config/rclone
-          echo "$RCLONE_CONFIG" > ~/.config/rclone/rclone.conf
+          echo "$RCLONE_CONF_CONTENT" > "$RCLONE_CONFIG"
           rclone copy ${{ github.workspace }}/output/qcow2/disk.qcow2 \
-            pcloud:blue-zirconium/blue-zirconium-${{ inputs.tag }}.qcow2
+            pcloud:blue-zirconium/blue-zirconium-${{ inputs.tag }}.qcow2 \
+            --ignore-times
