@@ -1,0 +1,43 @@
+name: build-qcow2
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Image tag to build qcow2 from
+        required: false
+        default: latest
+      upload-to-pcloud:
+        description: Upload to pCloud
+        required: false
+        type: boolean
+        default: false
+jobs:
+  qcow2:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Install rclone
+        run: curl -sL https://rclone.org/install.sh | sudo bash
+      - name: Build qcow2
+        run: |
+          sudo podman run --rm --privileged \
+            -v /var/lib/containers/storage:/var/lib/containers/storage \
+            -v ${{ github.workspace }}/output:/output \
+            -v /var/tmp:/var/tmp \
+            -v ${{ github.workspace }}/cache:/var/cache/image-builder/store \
+            ghcr.io/osbuild/image-builder-cli:latest \
+            build qcow2 \
+            --output-dir /output \
+            --bootc-ref ghcr.io/felipecabelloe/blue-zirconium:${{ inputs.tag }} \
+            --bootc-default-fs btrfs
+      - name: Upload to pCloud
+        if: ${{ inputs.upload-to-pcloud }}
+        env:
+          RCLONE_CONFIG: ${{ secrets.RCLONE_CONFIG }}
+        run: |
+          mkdir -p ~/.config/rclone
+          echo "$RCLONE_CONFIG" > ~/.config/rclone/rclone.conf
+          rclone copy ${{ github.workspace }}/output/qcow2/disk.qcow2 \
+            pcloud:blue-zirconium/blue-zirconium-${{ inputs.tag }}.qcow2

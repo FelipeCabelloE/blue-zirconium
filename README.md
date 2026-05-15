@@ -43,9 +43,14 @@ bluebuild build recipes/recipe.yml
 # Push to registry
 bluebuild login && bluebuild build --push recipes/recipe.yml
 
-# Build a VM disk image and boot it
-just vm                # qcow2 via bootc-image-builder
-just test              # vm + launch in qemu
+# Build a VM disk image from registry and boot it
+just registry-to-vm        # qcow2 via bootc-image-builder (from registry)
+just registry-to-test      # pull + create qcow2 + boot in qemu
+
+# Faster: VM from local build (no push)
+just build                 # build locally
+just local-vm              # convert to qcow2 from local storage
+just local-test           # boot existing qcow2 (skips rebuild)
 
 # Generate installer ISO
 just generate-iso-image

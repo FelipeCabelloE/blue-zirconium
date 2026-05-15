@@ -17,10 +17,13 @@ Build requires Docker v23+, Podman v4+, or Buildah v1.29+.
 ```bash
 just validate               # Validate recipe syntax
 just generate               # Generate Containerfile for inspection
+just build                  # Build the image locally
 just generate-iso           # Build + installer ISO from recipe
 just generate-iso-image     # Installer ISO from pushed image
-just vm                     # Build VM disk image (qcow2)
-just test                   # Build VM + boot with qemu
+just registry-to-vm         # Pull from registry → VM disk image (qcow2)
+just registry-to-test       # Pull from registry → VM → boot with qemu
+just local-vm               # VM from local podman storage (after just build)
+just local-test             # Boot existing disk.qcow2 (skip rebuild)
 ```
 
 Prerequisites for VM testing: `sudo dnf install @virtualization`

@@ -5,3 +5,4 @@ cosign.private
 /zirconium/
 /bluefin/
 /.bluebuild-scripts_*
+/cache/
