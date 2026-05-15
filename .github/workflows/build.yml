@@ -42,7 +42,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           versions=$(gh api /users/felipecabelloe/packages/container/blue-zirconium/versions \
-            --jq 'sort_by(.created_at) | reverse | .[3:] | .[].id')
+            --jq 'sort_by(.created_at) | reverse | .[10:] | .[].id')
           if [ -n "$versions" ]; then
             for id in $versions; do
               echo "Deleting version $id"
