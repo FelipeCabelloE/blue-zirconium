@@ -1,0 +1,29 @@
+{
+  "keep_list": [
+    "gnome-keyring",
+    "gnome-keyring-pam",
+    "gnome-disk-utility"
+  ],
+  "target_non_gnome": [
+    "gdm",
+    "ptyxis",
+    "gnome-backgrounds",
+    "gnome-browser-connector",
+    "gnome-classic-session",
+    "gnome-contacts",
+    "gnome-maps",
+    "gnome-user-docs",
+    "gnome-remote-desktop",
+    "gvfs-goa",
+    "rygel"
+  ],
+  "extra_remove": [
+    "adw-gtk3-theme",
+    "nautilus-gsconnect",
+    "firewall-config",
+    "gnome-boxes",
+    "snapshot",
+    "ibus-mozc",
+    "mozc"
+  ]
+}

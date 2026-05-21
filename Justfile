@@ -7,6 +7,9 @@ _:
 validate:
     bluebuild validate recipes/recipe.yml
 
+validate-deps:
+    python3 files/scripts/validate-gnome-removals.py --container-check
+
 generate:
     bluebuild generate recipes/recipe.yml
 
@@ -53,4 +56,5 @@ local-vm:
 
 local-test:
     qemu-system-x86_64 -m 4096 -enable-kvm \
-      -drive file=./output/qcow2/disk.qcow2
+    -device virtio-vga -serial stdio \
+      -drive file=./output/qcow2/disk.qcow2 \

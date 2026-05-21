@@ -6,32 +6,16 @@ DRY_RUN="${DRY_RUN:-false}"
 
 echo "::group:: ===GNOME detection${DRY_RUN:+ (DRY RUN)}==="
 
-# ---------------------------------------------------------------------------
-# Keep list  —  gnome-* packages that provide system-wide services and
-# should NOT be removed. These are not GNOME-desktop functionality.
-# ---------------------------------------------------------------------------
-KEEP_LIST=(
-    gnome-keyring          # Secret Service provider
-    gnome-keyring-pam      # PAM auto-unlock integration
-    gnome-disk-utility     # Disk management GUI (system utility)
-)
-
-# ---------------------------------------------------------------------------
-# Non-gnome- GNOME packages to explicitly remove
-# ---------------------------------------------------------------------------
-TARGET_NON_GNOME=(
-    gdm                    # Login manager  →  greetd
-    ptyxis                 # Terminal       →  foot
-)
-
-# ---------------------------------------------------------------------------
-# GNOME packages added by bluefin  →  always remove
-# ---------------------------------------------------------------------------
-EXTRA_REMOVE=(
-    adw-gtk3-theme         # libadwaita theme (GNOME-only, not gnome- prefix)
-    nautilus-gsconnect     # KDE Connect GNOME integration (not gnome- prefix)
-    firewall-config        # GNOME firewall frontend (not gnome- prefix)
-)
+# Load removal lists from JSON config (single source of truth)
+# This populates KEEP_LIST, TARGET_NON_GNOME, and EXTRA_REMOVE arrays.
+CONFIG_FILE="$(dirname "$(readlink -f "$0")")/gnome-removal-config.json"
+eval "$(python3 -c "
+import json
+with open('${CONFIG_FILE}') as f:
+    d = json.load(f)
+for k, v in d.items():
+    print(f'{k.upper()}=({\" \".join(v)})')
+")"
 
 # ---------------------------------------------------------------------------
 # Step 1 — Detect Fedora version (for reporting only)

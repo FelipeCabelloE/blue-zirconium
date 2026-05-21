@@ -6,3 +6,4 @@ cosign.private
 /bluefin/
 /.bluebuild-scripts_*
 /cache/
+__pycache__/

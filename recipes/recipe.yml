@@ -15,6 +15,9 @@ modules:
     scripts:
       - detect-gnome-removals.sh
   - type: script
+    scripts:
+      - validate-gnome-removals.py
+  - type: script
     snippets:
       - |
         if [ -f /usr/share/ublue-os/user-setup.hooks.d/10-theming.sh ]; then
